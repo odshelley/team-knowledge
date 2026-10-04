@@ -31,6 +31,21 @@ Findings have five kinds: `dead-end`, `caveat`, `how-to`, `decision`, `fact`. Th
 entities of five types: `project`, `system`, `environment`, `desk`, `tool`. Entities are the only
 vocabulary; a finding cannot be scoped to something that has no entity page.
 
+## Who runs what, and why Neo4j
+
+Neo4j is the **shared team database**: one instance, read by everyone's MCP server. That is how a
+colleague's finding reaches you. They record it, a reviewer approves the merge request, CI runs
+`tk sync` on merge, and the finding is in the graph the next time you ask. Nobody syncs by hand at
+work, and the MCP server cannot write to Neo4j at all, so the graph has exactly one writer and review
+cannot be bypassed.
+
+The repo is the source of truth and the graph is a derived copy. Sync is idempotent and incremental,
+and `tk sync --full` rebuilds the graph from scratch, so losing Neo4j loses nothing.
+
+At home there is no CI and one user, so you run the reviewer's approval and the sync yourself. If you
+would rather not leave Claude Code for it, ask the agent to run the sync command in its shell; it is
+an ordinary CLI command, deliberately not an MCP tool.
+
 ## Quickstart at home
 
 Everything below runs from this directory with `uv run --env-file .env tk ...`, so the variables in
