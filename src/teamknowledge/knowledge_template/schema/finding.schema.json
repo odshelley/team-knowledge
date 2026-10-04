@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "team-knowledge/finding/v1",
+  "title": "Finding header",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "kind", "title", "claim", "scope", "evidence",
+               "confidence", "status", "author", "created"],
+  "properties": {
+    "id":            { "$ref": "#/$defs/findingId" },
+    "kind":          { "enum": ["dead-end", "caveat", "how-to", "decision", "fact"] },
+    "title":         { "type": "string", "minLength": 10, "maxLength": 120 },
+    "claim":         { "type": "string", "minLength": 20, "maxLength": 600 },
+    "scope":         { "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true,
+                       "items": { "$ref": "#/$defs/entityRef" } },
+    "applies_when":  { "type": "string", "maxLength": 300 },
+    "evidence":      { "type": "array", "minItems": 1, "maxItems": 10,
+                       "items": { "$ref": "#/$defs/evidence" } },
+    "confidence":    { "enum": ["observed", "inferred", "reported"] },
+    "status":        { "enum": ["active", "superseded", "retracted"] },
+    "supersedes":    { "type": "array", "uniqueItems": true,
+                       "items": { "$ref": "#/$defs/findingId" } },
+    "superseded_by": { "$ref": "#/$defs/findingId" },
+    "contradicts":   { "type": "array", "uniqueItems": true,
+                       "items": { "$ref": "#/$defs/findingId" } },
+    "retracted_reason": { "type": "string", "minLength": 10, "maxLength": 300 },
+    "author":        { "$ref": "#/$defs/username" },
+    "created":       { "type": "string", "format": "date" },
+    "review_after":  { "type": "string", "format": "date" }
+  },
+  "allOf": [
+    { "if":   { "properties": { "status": { "const": "superseded" } } },
+      "then": { "required": ["superseded_by"] } },
+    { "if":   { "properties": { "status": { "const": "retracted" } } },
+      "then": { "required": ["retracted_reason"] } }
+  ],
+  "$defs": {
+    "findingId": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "entityRef": { "type": "string",
+                   "pattern": "^(project|system|environment|desk|tool)/[a-z0-9][a-z0-9-]{0,62}$" },
+    "username":  { "type": "string", "pattern": "^[A-Za-z0-9._@-]+$" },
+    "evidence": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["type", "note"],
+          "properties": {
+            "type": { "const": "observation" },
+            "note": { "type": "string", "minLength": 10, "maxLength": 400 } } },
+        { "type": "object", "additionalProperties": false, "required": ["type", "ref"],
+          "properties": {
+            "type": { "enum": ["confluence", "gitlab", "runbook", "url"] },
+            "ref":  { "type": "string", "minLength": 1, "maxLength": 500 },
+            "note": { "type": "string", "maxLength": 400 } } }
+      ]
+    }
+  }
+}

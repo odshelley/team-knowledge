@@ -1,0 +1,31 @@
+schema_version: 1
+max_body_words: 400
+kinds:
+  dead-end:
+    description: An approach that does not work in the given scope.
+    sections:
+      - { heading: Approach,      required: true }
+      - { heading: Why it fails,  required: true }
+      - { heading: Instead,       required: false }
+  caveat:
+    description: Non-obvious behaviour that causes mistakes.
+    sections:
+      - { heading: Symptom,       required: true }
+      - { heading: Cause,         required: true }
+      - { heading: Workaround,    required: true }
+  how-to:
+    description: A recipe that is known to work in the given scope.
+    sections:
+      - { heading: Steps,         required: true }
+      - { heading: Verify,        required: true }
+  decision:
+    description: A choice the team made, and why.
+    sections:
+      - { heading: Options considered, required: true }
+      - { heading: Rationale,          required: true }
+      - { heading: Consequences,       required: true }
+  fact:
+    description: A stable property of a system or environment.
+    sections:
+      - { heading: Detail,        required: true }
+      - { heading: How to check,  required: true }

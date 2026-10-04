@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "team-knowledge/entity/v1",
+  "title": "Entity header",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "name", "description"],
+  "properties": {
+    "type":        { "enum": ["project", "system", "environment", "desk", "tool"] },
+    "name":        { "type": "string", "minLength": 2, "maxLength": 80 },
+    "aliases":     { "type": "array", "uniqueItems": true,
+                     "items": { "type": "string", "minLength": 1, "maxLength": 80 } },
+    "description": { "type": "string", "minLength": 20, "maxLength": 600 },
+    "owner":       { "type": "array", "uniqueItems": true,
+                     "items": { "type": "string", "pattern": "^[A-Za-z0-9._@-]+$" } },
+    "related":     { "type": "array", "uniqueItems": true, "maxItems": 20,
+                     "items": { "type": "string",
+                       "pattern": "^(project|system|environment|desk|tool)/[a-z0-9][a-z0-9-]{0,62}$" } },
+    "links":       { "type": "array",
+                     "items": { "type": "object", "additionalProperties": false,
+                       "required": ["type", "ref"],
+                       "properties": {
+                         "type": { "enum": ["confluence", "gitlab", "runbook", "url"] },
+                         "ref":  { "type": "string", "minLength": 1, "maxLength": 500 },
+                         "note": { "type": "string", "maxLength": 400 } } } }
+  }
+}
