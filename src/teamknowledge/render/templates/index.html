@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% import "_macros.html" as m %}
+{% block body %}
+<h1>Team knowledge</h1>
+<table>
+<tr><th>Kind</th><th>Active</th><th>Superseded</th><th>Retracted</th></tr>
+{% for k in kinds %}<tr><td><a href="kinds/{{ k }}.html">{{ k }}</a></td><td>{{ counts[k]['active'] }}</td><td>{{ counts[k]['superseded'] }}</td><td>{{ counts[k]['retracted'] }}</td></tr>{% endfor %}
+</table>
+<h2>Newest findings</h2>
+{{ m.finding_list(newest, root) }}
+<h2>Entities</h2>
+{% for type, items in entities_by_type.items() %}
+<h3>{{ type }}</h3>
+<ul>{% for e in items %}<li><a href="entities/{{ e.ref }}.html">{{ e.name }}</a> <span class="muted">{{ e.description }}</span></li>{% endfor %}</ul>
+{% endfor %}
+{% endblock %}

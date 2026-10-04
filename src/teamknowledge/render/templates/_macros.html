@@ -1,0 +1,15 @@
+{% macro finding_item(f, root) -%}
+<li class="status-{{ f.status }}">
+  <span class="kind">{{ f.kind }}</span>
+  <a href="{{ root }}findings/{{ f.id }}.html">{{ f.title }}</a>
+  <div class="muted">{{ f.claim }} &mdash; {{ f.author }}, {{ f.created }}{% if f.status != 'active' %} ({{ f.status }}){% endif %}</div>
+</li>
+{%- endmacro %}
+
+{% macro finding_list(findings, root) -%}
+<ul class="findings">{% for f in findings %}{{ finding_item(f, root) }}{% endfor %}</ul>
+{%- endmacro %}
+
+{% macro entity_link(ref, entities, root) -%}
+{% if ref in entities %}<a href="{{ root }}entities/{{ ref }}.html">{{ entities[ref].name }}</a>{% else %}<code>{{ ref }}</code>{% endif %}
+{%- endmacro %}

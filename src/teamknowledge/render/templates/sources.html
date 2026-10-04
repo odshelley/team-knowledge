@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sources{% endblock %}
+{% block body %}
+<h1>Sources</h1>
+{% for type, items in sources_by_type.items() %}
+<h2>{{ type }}</h2>
+<table>
+<tr><th>Reference</th><th>Cited by</th></tr>
+{% for ref, s in items %}
+<tr><td><a href="{{ ref }}">{{ ref }}</a></td>
+<td>{% for f, note in s.findings %}<div><a href="findings/{{ f.id }}.html">{{ f.title }}</a>{% if note %} <span class="muted">({{ note }})</span>{% endif %}</div>{% endfor %}
+{% for e, note in s.entities %}<div><a href="entities/{{ e.ref }}.html">{{ e.name }}</a>{% if note %} <span class="muted">({{ note }})</span>{% endif %}</div>{% endfor %}</td></tr>
+{% endfor %}
+</table>
+{% endfor %}
+{% endblock %}

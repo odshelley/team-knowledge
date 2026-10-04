@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% import "_macros.html" as m %}
+{% block title %}{{ f.title }}{% endblock %}
+{% block body %}
+<p><span class="kind">{{ f.kind }}</span> <span class="muted">{{ f.status }}</span></p>
+<h1>{{ f.title }}</h1>
+<p>{{ f.claim }}</p>
+<dl>
+  <dt>Scope</dt><dd>{% for ref in f.scope %}{{ m.entity_link(ref, entities, root) }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+  {% if f.applies_when %}<dt>Applies when</dt><dd>{{ f.applies_when }}</dd>{% endif %}
+  <dt>Confidence</dt><dd>{{ f.confidence }}</dd>
+  <dt>Author</dt><dd>{{ f.author }}, {{ f.created }}</dd>
+  {% if f.review_after %}<dt>Review after</dt><dd>{{ f.review_after }}</dd>{% endif %}
+  {% if f.retracted_reason %}<dt>Retracted</dt><dd>{{ f.retracted_reason }}</dd>{% endif %}
+  {% if f.superseded_by %}<dt>Superseded by</dt><dd><a href="{{ root }}findings/{{ f.superseded_by }}.html">{{ titles.get(f.superseded_by, f.superseded_by) }}</a></dd>{% endif %}
+  {% if f.supersedes %}<dt>Supersedes</dt><dd>{% for i in f.supersedes %}<a href="{{ root }}findings/{{ i }}.html">{{ titles.get(i, i) }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+  {% if f.contradicts or contradicted_by %}<dt>Contradicts</dt><dd>{% for i in f.contradicts + contradicted_by %}<a href="{{ root }}findings/{{ i }}.html">{{ titles.get(i, i) }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+</dl>
+{% for heading, text in f.sections.items() %}
+<h2>{{ heading }}</h2>
+{{ text | md }}
+{% endfor %}
+<h2>Evidence</h2>
+<ul>
+{% for e in f.evidence %}
+  <li>{% if e.ref %}<a href="{{ e.ref }}">{{ e.ref }}</a>{% else %}{{ e.type }}{% endif %}{% if e.note %} &mdash; {{ e.note }}{% endif %}</li>
+{% endfor %}
+</ul>
+{% endblock %}

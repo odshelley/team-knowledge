@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Team knowledge{% endblock %}</title>
+<style>
+body{font:15px/1.5 system-ui,sans-serif;max-width:60rem;margin:2rem auto;padding:0 1rem;color:#1b1b1b;background:#fff}
+nav a{margin-right:1rem}
+h1,h2,h3{line-height:1.25}
+.kind{display:inline-block;padding:.05rem .5rem;border-radius:.3rem;font-size:.8rem;background:#e8ecf8;color:#223}
+.status-superseded,.status-retracted{opacity:.6}
+dl{display:grid;grid-template-columns:max-content 1fr;gap:.25rem 1.25rem}
+dt{font-weight:600}
+ul.findings{list-style:none;padding:0}
+ul.findings li{margin:.6rem 0}
+.muted{color:#666;font-size:.9rem}
+table{border-collapse:collapse;width:100%}
+td,th{border-bottom:1px solid #ddd;padding:.3rem .6rem;text-align:left;vertical-align:top}
+code{background:#f4f4f4;padding:0 .25rem}
+</style>
+</head>
+<body>
+<nav>
+  <a href="{{ root }}index.html">Home</a>
+  <a href="{{ root }}sources.html">Sources</a>
+  {% for k in kinds %}<a href="{{ root }}kinds/{{ k }}.html">{{ k }}</a>{% endfor %}
+</nav>
+{% block body %}{% endblock %}
+</body>
+</html>

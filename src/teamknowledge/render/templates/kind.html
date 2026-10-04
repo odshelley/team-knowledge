@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% import "_macros.html" as m %}
+{% block title %}{{ kind }}{% endblock %}
+{% block body %}
+<h1>{{ kind }}</h1>
+<p class="muted">{{ description }}</p>
+{% if findings %}{{ m.finding_list(findings, root) }}{% else %}<p class="muted">No active findings of this kind yet.</p>{% endif %}
+{% endblock %}

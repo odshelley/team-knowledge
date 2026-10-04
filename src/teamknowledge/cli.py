@@ -156,6 +156,15 @@ def cmd_sync(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_render(args: argparse.Namespace) -> int:
+    from .render.build import render_site
+    from .repo import KnowledgeRepo
+
+    written = render_site(KnowledgeRepo(args.repo), args.out)
+    print(f"rendered {len(written)} pages to {args.out}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tk", description="Team Knowledge")
     parser.add_argument("--version", action="version", version=f"tk {__version__}")
@@ -198,6 +207,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--full", action="store_true", help="wipe and rebuild")
     p.add_argument("--embed-missing", action="store_true", help="only fill null embeddings")
     p.set_defaults(func=cmd_sync)
+
+    p = sub.add_parser("render", help="build the static wiki")
+    _add_repo_arg(p)
+    p.add_argument("--out", type=Path, default=Path("public"))
+    p.set_defaults(func=cmd_render)
 
     return parser
 
