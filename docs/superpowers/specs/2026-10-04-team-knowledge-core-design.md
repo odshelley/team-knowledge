@@ -362,7 +362,7 @@ gitlab:
   project: pricing/team-knowledge      # path with namespace
   target_branch: main
 review:
-  default_reviewers: [pricing-quants]  # GitLab usernames or group handles, used when no scoped entity has an owner
+  default_reviewers: [jane.doe, sam.lee]  # GitLab usernames, used when no scoped entity has an owner
 wiki:
   base_url: https://pricing.pages.gitlab.bank/team-knowledge
 ```
@@ -416,7 +416,7 @@ class GitHost(Protocol):
 
 Two implementations.
 
-- **GitLab.** REST calls through `requests`. Endpoints used: create merge request, get merge request by source branch, list merge requests by merge commit, list approvals. Authentication by `PRIVATE-TOKEN` header. When configured for push options, `open_merge_request` pushes with the options and then polls `merge_request_for_branch` once to return the record.
+- **GitLab.** REST calls through `requests`. Endpoints used: create merge request, get merge request by source branch, list merge requests by merge commit, list approvals, and look up users by username to resolve reviewer ids. Authentication by `PRIVATE-TOKEN` header. When configured for push options, `open_merge_request` pushes with the options and then polls `merge_request_for_branch` once to return the record.
 - **Local.** Used by the home prototype and by tests. The remote is a bare repo on disk. A merge request is a JSON file in a sidecar directory next to the bare repo, `<remote>.review/<branch>.json`. `tk review approve <branch> --as <username>` records the approver, refuses if the approver is the author, fast-forward merges the branch into main in the bare repo, and records the merge commit. `tk review list` prints open records.
 
 ## 9. MCP server
@@ -447,6 +447,8 @@ The `.mcp.json` snippet each person adds to Claude Code:
   }
 }
 ```
+
+Variables not listed in `env` are inherited from the shell Claude Code was started from, so most people keep their credentials in their shell profile and list only `TK_REPO` here.
 
 The server never writes to Neo4j.
 
@@ -637,7 +639,7 @@ The Lucene query is built from the user's text by escaping Lucene special charac
 
 Writes go through `UNWIND $rows` in batches of 100.
 
-`tk sync --full` deletes every node in batches using `CALL { ... } IN TRANSACTIONS OF 10000 ROWS`, reruns `tk graph init`, and replays every file. Use it for recovery, schema changes, and embedding model changes. `tk sync --embed-missing` finds findings whose `embedding` is null or whose `embedding_model` differs from the configured one and fills them in without touching anything else.
+`tk sync --full` deletes every node in batches using `CALL { ... } IN TRANSACTIONS OF 10000 ROWS`, reruns `tk graph init`, and replays every file. Use it for recovery, schema changes, and embedding model changes. `tk sync --embed-missing` finds findings whose `embedding` is null and fills them in without touching anything else. A model change is handled by `tk sync --full`, because the vector index dimensions must be recreated.
 
 ## 13. Render
 
