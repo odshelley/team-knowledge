@@ -30,10 +30,10 @@ def proposer(knowledge_repo):
 
 
 def good_input(**kw) -> ProposalInput:
-    base = dict(kind="dead-end", title="Batch queries over 10k symbols time out",
-                claim="Selects over more than ten thousand symbols hit the thirty second gateway timeout.",
-                scope=["system/kdb-gateway"], evidence=[{"type": "observation", "note": "Reproduced on 2026-10-04 with 12k symbols."}],
-                confidence="observed", sections={"Approach": "One select.", "Why it fails": "Timeout."})
+    base = {"kind": "dead-end", "title": "Batch queries over 10k symbols time out",
+            "claim": "Selects over more than ten thousand symbols hit the thirty second gateway timeout.",
+            "scope": ["system/kdb-gateway"], "evidence": [{"type": "observation", "note": "Reproduced on 2026-10-04 with 12k symbols."}],
+            "confidence": "observed", "sections": {"Approach": "One select.", "Why it fails": "Timeout."}}
     base.update(kw)
     return ProposalInput(**base)
 

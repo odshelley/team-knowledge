@@ -164,7 +164,7 @@ class Reader:
                 vec = self.embedder.embed([query])[0]
                 vector_ids = [r["id"] for r in self.client.run(VECTOR_QUERY, k=k, vec=vec, kinds=list(kinds),
                                                                 min_score=self.vector_min_score)]
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 — degrade to full-text search on any embedder or vector-index failure
                 warnings.append(f"semantic search unavailable ({exc}); results are full-text only")
         fused = rrf([fulltext_ids, vector_ids] if vector_ids else [fulltext_ids])
         if not fused:

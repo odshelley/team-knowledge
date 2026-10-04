@@ -55,7 +55,7 @@ def count(graph, label):
 
 
 def test_first_sync_loads_everything_and_is_idempotent(world):
-    repo, graph, host, proposer, syncer = world
+    repo, graph, _host, _proposer, syncer = world
     report = syncer.sync()
     assert report.findings_upserted == 1 and report.entities_upserted == 2 and report.embedded == 1
     assert syncer.meta()["last_sync_commit"] == repo.head_sha()
@@ -89,7 +89,7 @@ def test_incremental_sync_after_merge_sets_edges_and_review_metadata(world):
 
 
 def test_supersede_edges_and_status(world):
-    repo, graph, host, proposer, syncer = world
+    _repo, graph, host, proposer, syncer = world
     syncer.sync()
     first = propose_and_merge(proposer, host)
     syncer.sync()
@@ -102,7 +102,7 @@ def test_supersede_edges_and_status(world):
 
 
 def test_deleted_file_removes_node(world):
-    repo, graph, host, proposer, syncer = world
+    repo, graph, _host, _proposer, syncer = world
     syncer.sync()
     path = repo.root / "findings" / f"{EXAMPLE_ID}-example-dead-end.md"
     repo.git("rm", "-q", str(path.relative_to(repo.root)))
@@ -114,7 +114,7 @@ def test_deleted_file_removes_node(world):
 
 
 def test_embedding_failure_is_not_fatal_and_embed_missing_recovers(world):
-    repo, graph, host, proposer, syncer = world
+    repo, graph, host, _proposer, syncer = world
     broken = Syncer(repo, graph, embedder=BrokenEmbedder(), host=host, sleep=lambda s: None)
     report = broken.sync()
     assert report.embedding_failures == 1 and report.warnings and report.findings_upserted == 1
@@ -125,7 +125,7 @@ def test_embedding_failure_is_not_fatal_and_embed_missing_recovers(world):
 
 
 def test_model_change_requires_full(world):
-    repo, graph, host, proposer, syncer = world
+    repo, graph, host, _proposer, syncer = world
     syncer.sync()
     other = Syncer(repo, graph, embedder=FakeEmbedder(dims=32, model="fake-32"), host=host, sleep=lambda s: None)
     with pytest.raises(SyncError, match="tk sync --full"):
@@ -137,7 +137,7 @@ def test_model_change_requires_full(world):
 
 
 def test_embed_missing_rejects_model_mismatch(world):
-    repo, graph, host, proposer, syncer = world
+    repo, graph, host, _proposer, syncer = world
     syncer.sync()
     other = Syncer(repo, graph, embedder=FakeEmbedder(dims=32, model="fake-32"), host=host, sleep=lambda s: None)
     with pytest.raises(SyncError, match="tk sync --full"):
@@ -145,7 +145,7 @@ def test_embed_missing_rejects_model_mismatch(world):
 
 
 def test_validation_error_aborts_without_advancing_meta(world):
-    repo, graph, host, proposer, syncer = world
+    repo, _graph, _host, _proposer, syncer = world
     syncer.sync()
     before = syncer.meta()["last_sync_commit"]
     bad = repo.root / "findings" / "01J9XK3M8Q7ZV2W1F4N6B5HT9Q-bad.md"
@@ -158,7 +158,7 @@ def test_validation_error_aborts_without_advancing_meta(world):
 
 
 def test_cli_sync(world, monkeypatch, capsys):
-    repo, graph, host, proposer, syncer = world
+    repo, graph, _host, _proposer, _syncer = world
     monkeypatch.setenv("NEO4J_URI", graph.uri)
     monkeypatch.setenv("NEO4J_USERNAME", "neo4j")
     monkeypatch.setenv("NEO4J_PASSWORD", graph.password)

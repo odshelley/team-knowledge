@@ -252,7 +252,7 @@ class Syncer:
             return {}
         try:
             vectors = self._embed_with_retry([f.text_for_embedding() for f in need])
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 — any embedder failure after retries must not abort the sync
             report.embedding_failures = len(need)
             report.warnings.append(f"embedding failed after retries ({exc}); stored without embeddings, run tk sync --embed-missing")
             return {f.id: None for f in need}
@@ -264,7 +264,7 @@ class Syncer:
         for attempt in range(1, attempts + 1):
             try:
                 return self.embedder.embed(texts)
-            except Exception:
+            except Exception:  # noqa: BLE001 — any embedder failure is retried, then re-raised on the last attempt
                 if attempt == attempts:
                     raise
                 log.warning("embedding attempt %d failed; retrying in %.0fs", attempt, delay)
@@ -280,7 +280,7 @@ class Syncer:
             sha = self.repo.last_commit_for(f.path)
             try:
                 merge_requests = self.host.merge_requests_for_commit(sha) if sha else []
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001 — a host lookup failure must not abort the whole sync
                 report.warnings.append(f"review metadata lookup failed for {f.id}: {exc}")
                 continue
             merged = [m for m in merge_requests if m.state == "merged"]

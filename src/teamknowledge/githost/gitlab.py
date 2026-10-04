@@ -60,7 +60,7 @@ class GitLabHost:
             iid=data["iid"], url=data["web_url"], branch=data["source_branch"],
             state=_STATE.get(data["state"], data["state"]), author=data["author"]["username"],
             approvers=approvers,
-            merged_at=datetime.fromisoformat(merged_at.replace("Z", "+00:00")) if merged_at else None,
+            merged_at=datetime.fromisoformat(merged_at) if merged_at else None,
             merge_commit=data.get("merge_commit_sha") or data.get("squash_commit_sha"),
         )
 

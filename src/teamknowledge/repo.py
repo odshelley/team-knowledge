@@ -49,7 +49,7 @@ class KnowledgeRepo:
     # --- git ---------------------------------------------------------------
 
     def git(self, *args: str, check: bool = True, env: dict | None = None) -> str:
-        result = subprocess.run(["git", "-C", str(self.root), *args], capture_output=True, text=True, env=env)
+        result = subprocess.run(["git", "-C", str(self.root), *args], capture_output=True, text=True, env=env, check=False)
         if check and result.returncode != 0:
             raise GitError(f"git {' '.join(args)} failed: {result.stderr.strip()}")
         return result.stdout

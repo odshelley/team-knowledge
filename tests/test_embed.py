@@ -1,6 +1,7 @@
 import json
 import math
 import os
+from typing import ClassVar
 
 import pytest
 
@@ -30,7 +31,7 @@ class FakeOpenAI:
         @staticmethod
         def create(model, input):
             class R:
-                data = [type("D", (), {"embedding": [float(i)] * 3})() for i in range(len(input))]
+                data: ClassVar = [type("D", (), {"embedding": [float(i)] * 3})() for i in range(len(input))]
             return R()
 
 

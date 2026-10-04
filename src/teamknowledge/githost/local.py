@@ -21,7 +21,7 @@ class LocalGitHost:
     # --- git helpers -------------------------------------------------------
 
     def _run(self, *args: str, env: dict | None = None) -> subprocess.CompletedProcess:
-        return subprocess.run(["git", "-C", str(self.remote), *args], capture_output=True, text=True, env=env)
+        return subprocess.run(["git", "-C", str(self.remote), *args], capture_output=True, text=True, env=env, check=False)
 
     def _git(self, *args: str, env: dict | None = None) -> str:
         result = self._run(*args, env=env)

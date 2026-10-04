@@ -17,21 +17,21 @@ def v() -> Validator:
 
 
 def entity(type="system", slug="kdb-gateway", **kw) -> Entity:
-    base = dict(type=type, slug=slug, name="kdb+ gateway", description="The q process that fronts the tick databases.",
-                path=Path(f"entities/{type}/{slug}.md"), dir_type=type)
+    base = {"type": type, "slug": slug, "name": "kdb+ gateway", "description": "The q process that fronts the tick databases.",
+            "path": Path(f"entities/{type}/{slug}.md"), "dir_type": type}
     base.update(kw)
     return Entity(**base)
 
 
 def finding(**kw) -> Finding:
-    base = dict(
-        id=FID, kind="dead-end", title="Batch queries over 10k symbols time out",
-        claim="Selects over more than ten thousand symbols hit the thirty second gateway timeout.",
-        scope=["system/kdb-gateway"], evidence=[Evidence("observation", note="Reproduced on 2026-10-04 with 12k symbols.")],
-        confidence="observed", status="active", author="osian.shelley", created=date(2026, 10, 4),
-        sections={"Approach": "One select.", "Why it fails": "Timeout."},
-        path=Path(f"findings/{FID}-batch.md"),
-    )
+    base = {
+        "id": FID, "kind": "dead-end", "title": "Batch queries over 10k symbols time out",
+        "claim": "Selects over more than ten thousand symbols hit the thirty second gateway timeout.",
+        "scope": ["system/kdb-gateway"], "evidence": [Evidence("observation", note="Reproduced on 2026-10-04 with 12k symbols.")],
+        "confidence": "observed", "status": "active", "author": "osian.shelley", "created": date(2026, 10, 4),
+        "sections": {"Approach": "One select.", "Why it fails": "Timeout."},
+        "path": Path(f"findings/{FID}-batch.md"),
+    }
     base.update(kw)
     return Finding(**base)
 
