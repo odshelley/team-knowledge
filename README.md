@@ -50,6 +50,9 @@ Install the skill by copying `skills/team-knowledge/` into your Claude Code skil
 | `tk eval retrieval` | recall@3 for full-text, vector, fused |
 | `tk serve-mcp` | run the MCP server over stdio |
 
+`tk validate` reads `CI_MERGE_REQUEST_DIFF_BASE_SHA` from the environment in GitLab merge-request pipelines to
+check status transitions against the target branch; `--base REF` does the same thing locally.
+
 ## Develop
 
     uv run pytest                  # Neo4j tests need Docker; they skip without it

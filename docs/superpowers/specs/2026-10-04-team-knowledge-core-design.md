@@ -771,7 +771,7 @@ tests/
 docs/superpowers/specs/
 ```
 
-Dependencies: `pyyaml`, `jsonschema`, `neo4j`, `mcp`, `jinja2`, `markdown`, `requests`, `python-ulid`. Optional extras: `openai`, `bedrock` (boto3). Development: `pytest`, `testcontainers`, `ruff`. Frontmatter parsing is hand-rolled rather than another dependency. Nothing else.
+Dependencies: `pyyaml`, `jsonschema`, `neo4j`, `mcp` (1.x; 2.x removed the FastMCP v1 API), `jinja2`, `markupsafe`, `markdown`, `requests`, `python-ulid`. Optional extras: `openai`, `bedrock` (boto3). Development: `pytest`, `testcontainers`, `ruff`. Frontmatter parsing is hand-rolled rather than another dependency. Nothing else.
 
 `tk` commands:
 
@@ -829,3 +829,7 @@ This is the order of operations for standing the system up inside the bank from 
 - Amazon Titan Text Embeddings V2 is enabled in the bank's Bedrock account. If a different embedding model is mandated, only `embed/bedrock.py` and the dimension change.
 - An internal package index exists for CI to install from. If not, vendor the wheel into the knowledge repo.
 - GitLab Pages is enabled on the instance. If not, `tk render` output can be served from any static host.
+- GitLab's squash or fast-forward merge settings leave no merge commit, so review metadata may be absent: the
+  first-parent commit lookup still finds the change, but the merge-request association may not resolve.
+- `VECTOR_MIN_SCORE = 0.7` is a tunable to recalibrate with the real embedder via `tk eval retrieval`.
+- Finding bodies are markdown and the renderer passes raw HTML through, so review is the gate, not rendering.
