@@ -160,6 +160,32 @@ def cmd_serve_mcp(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_eval_retrieval(args: argparse.Namespace) -> int:
+    import tempfile
+
+    from .eval_retrieval import run_eval
+    from .graph.client import GraphClient
+    from .settings import Settings, make_embedder_from
+
+    try:
+        from testcontainers.community.neo4j import Neo4jContainer
+    except ImportError:
+        print("error: install the eval extra (uv sync --extra eval) and start Docker")
+        return 1
+    embedder = make_embedder_from(Settings.from_env())
+    if embedder is None or embedder.model == "fake":
+        print("note: vector and fused arms are meaningless without a real embedder (set TK_EMBEDDER=openai or bedrock)")
+    with Neo4jContainer("neo4j:5.26-community") as container, tempfile.TemporaryDirectory() as tmp:
+        client = GraphClient(container.get_connection_url(), "neo4j", container.password)
+        result = run_eval(client, embedder, Path(tmp))
+        client.close()
+    print(f"embedder: {result['embedder']}; {result['findings']} findings, {result['queries']} queries")
+    print(f"recall@3  full-text only: {result['fulltext']:.3f}")
+    print(f"recall@3  vector only:    {result['vector']:.3f}")
+    print(f"recall@3  fused:          {result['fused']:.3f}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tk", description="Team Knowledge")
     parser.add_argument("--version", action="version", version=f"tk {__version__}")
@@ -210,6 +236,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("serve-mcp", help="run the MCP server over stdio")
     p.set_defaults(func=cmd_serve_mcp)
+
+    ev = sub.add_parser("eval", help="evaluations").add_subparsers(dest="eval_command", required=True)
+    p = ev.add_parser("retrieval", help="recall@3 for full-text, vector, and fused search on the fixture corpus")
+    p.set_defaults(func=cmd_eval_retrieval)
 
     return parser
 
