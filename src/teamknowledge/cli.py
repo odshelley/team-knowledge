@@ -49,6 +49,32 @@ def cmd_validate(args: argparse.Namespace) -> int:
     return 1 if errors else 0
 
 
+def _local_host(args: argparse.Namespace):
+    from .githost.local import LocalGitHost
+    from .repo import KnowledgeRepo
+
+    repo = KnowledgeRepo(args.repo)
+    return LocalGitHost(Path(repo.remote_url()), author=os.environ.get("TK_AUTHOR", "tk"))
+
+
+def cmd_review_list(args: argparse.Namespace) -> int:
+    for mr in _local_host(args).list_all():
+        print(f"{mr.iid}\t{mr.state}\t{mr.author}\t{mr.branch}\t{mr.url}")
+    return 0
+
+
+def cmd_review_approve(args: argparse.Namespace) -> int:
+    from .githost.base import GitHostError
+
+    try:
+        mr = _local_host(args).approve(args.branch, args.approver)
+    except GitHostError as exc:
+        print(f"error: {exc}")
+        return 1
+    print(f"{mr.branch} merged into main as {mr.merge_commit} (approved by {args.approver})")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tk", description="Team Knowledge")
     parser.add_argument("--version", action="version", version=f"tk {__version__}")
@@ -66,6 +92,16 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--base", default=None, help="git ref to check status transitions against")
     p.add_argument("files", nargs="*", help="restrict reported errors to these paths")
     p.set_defaults(func=cmd_validate)
+
+    review = sub.add_parser("review", help="local adapter review commands").add_subparsers(dest="review_command", required=True)
+    p = review.add_parser("list")
+    _add_repo_arg(p)
+    p.set_defaults(func=cmd_review_list)
+    p = review.add_parser("approve")
+    p.add_argument("branch")
+    p.add_argument("--as", dest="approver", required=True)
+    _add_repo_arg(p)
+    p.set_defaults(func=cmd_review_approve)
 
     return parser
 
