@@ -75,6 +75,32 @@ def cmd_review_approve(args: argparse.Namespace) -> int:
     return 0
 
 
+def _host_from_env(repo):
+    """Build the git host named by TK_GITHOST. The GitLab branch is filled in by Task 7."""
+    from .githost.local import LocalGitHost
+
+    kind = os.environ.get("TK_GITHOST", "local")
+    author = os.environ.get("TK_AUTHOR", "tk")
+    if kind == "local":
+        return LocalGitHost(Path(repo.remote_url()), author=author)
+    raise SystemExit(f"TK_GITHOST={kind!r} is not supported yet")
+
+
+def cmd_push(args: argparse.Namespace) -> int:
+    from .propose import Proposer
+    from .repo import KnowledgeRepo
+    from .validate import Validator
+
+    repo = KnowledgeRepo(args.repo)
+    proposer = Proposer(repo, Validator(repo.schema_dir), _host_from_env(repo), author=os.environ.get("TK_AUTHOR", "tk"))
+    result = proposer.push_branch(args.branch)
+    if result.error:
+        print(f"error: {result.error}")
+        return 1
+    print(f"merge request: {result.merge_request_url}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tk", description="Team Knowledge")
     parser.add_argument("--version", action="version", version=f"tk {__version__}")
@@ -102,6 +128,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--as", dest="approver", required=True)
     _add_repo_arg(p)
     p.set_defaults(func=cmd_review_approve)
+
+    p = sub.add_parser("push", help="retry push and merge request creation for a committed branch")
+    p.add_argument("branch")
+    _add_repo_arg(p)
+    p.set_defaults(func=cmd_push)
 
     return parser
 
