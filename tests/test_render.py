@@ -1,6 +1,5 @@
 import re
 from datetime import date
-from pathlib import Path
 
 from teamknowledge.cli import main
 from teamknowledge.model import Entity, Evidence, Finding

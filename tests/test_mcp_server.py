@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from mcp.shared.memory import create_connected_server_and_client_session as connect
 
+from teamknowledge.cli import build_parser
 from teamknowledge.embed.fake import FakeEmbedder
 from teamknowledge.githost.local import LocalGitHost
 from teamknowledge.graph.client import GraphClient
@@ -15,7 +16,6 @@ from teamknowledge.model import Entity
 from teamknowledge.propose import Proposer
 from teamknowledge.settings import Settings
 from teamknowledge.validate import Validator
-from teamknowledge.cli import build_parser
 
 TOOLS = {"propose_finding", "amend_finding", "retract_finding", "findings_for_scope", "search_findings",
          "get_finding", "list_entities", "my_proposals"}

@@ -1,9 +1,9 @@
 import pytest
 
+from teamknowledge.cli import build_parser
 from teamknowledge.embed.fake import FakeEmbedder
 from teamknowledge.eval_fixtures import FINDINGS, QUERIES, finding_id
 from teamknowledge.eval_retrieval import recall_at_k, run_eval
-from teamknowledge.cli import build_parser
 
 
 def test_fixture_shapes():

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .base import GitHostError, MergeRequest
@@ -102,6 +102,6 @@ class LocalGitHost:
                               f"Merge {branch}\n\nApproved-by: {username}", env=env)
         self._git("update-ref", "refs/heads/main", merge_sha, main)
         rec.update(state="merged", approvers=[username], merge_commit=merge_sha, head_sha=head,
-                   merged_at=datetime.now(timezone.utc).isoformat())
+                   merged_at=datetime.now(UTC).isoformat())
         self._save(rec)
         return self._to_mr(rec)

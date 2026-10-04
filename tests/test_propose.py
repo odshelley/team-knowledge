@@ -6,7 +6,13 @@ import pytest
 from teamknowledge.cli import main
 from teamknowledge.githost.local import LocalGitHost
 from teamknowledge.model import Entity
-from teamknowledge.propose import ProposalInput, Proposer, finding_id_from_branch, merge_request_text, resolve_reviewers
+from teamknowledge.propose import (
+    ProposalInput,
+    Proposer,
+    finding_id_from_branch,
+    merge_request_text,
+    resolve_reviewers,
+)
 from teamknowledge.repo import GitError
 from teamknowledge.validate import Validator
 

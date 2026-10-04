@@ -22,7 +22,7 @@ class Settings:
     embedder: str
 
     @classmethod
-    def from_env(cls, env=os.environ) -> "Settings":
+    def from_env(cls, env=os.environ) -> Settings:
         repo = env.get("TK_REPO")
         return cls(
             repo=Path(repo) if repo else None,

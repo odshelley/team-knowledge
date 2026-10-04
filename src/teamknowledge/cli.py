@@ -111,7 +111,7 @@ def cmd_graph_init(args: argparse.Namespace) -> int:
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
-    from .graph.sync import SyncError, Syncer
+    from .graph.sync import Syncer, SyncError
     from .repo import KnowledgeRepo
     from .settings import Settings, make_embedder_from, make_graph_client
 

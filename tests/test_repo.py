@@ -3,7 +3,7 @@ from pathlib import Path
 
 from teamknowledge.cli import main
 from teamknowledge.model import Entity, Evidence, Finding
-from teamknowledge.repo import KnowledgeRepo, init_knowledge_repo, template_dir
+from teamknowledge.repo import init_knowledge_repo, template_dir
 
 
 def test_template_dir_has_schema():

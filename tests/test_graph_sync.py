@@ -6,8 +6,8 @@ import pytest
 from teamknowledge.cli import main
 from teamknowledge.embed.fake import FakeEmbedder
 from teamknowledge.githost.local import LocalGitHost
-from teamknowledge.graph.sync import SyncError, Syncer
-from teamknowledge.model import Entity, Evidence, Finding
+from teamknowledge.graph.sync import Syncer, SyncError
+from teamknowledge.model import Entity
 from teamknowledge.propose import ProposalInput, Proposer
 from teamknowledge.validate import Validator
 

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -11,8 +10,17 @@ from pathlib import Path
 
 import yaml
 
-from .model import (Entity, Finding, ParseError, entity_path, finding_filename, parse_entity,
-                    parse_finding, serialize_entity, serialize_finding)
+from .model import (
+    Entity,
+    Finding,
+    ParseError,
+    entity_path,
+    finding_filename,
+    parse_entity,
+    parse_finding,
+    serialize_entity,
+    serialize_finding,
+)
 from .validate import ValidationError
 
 

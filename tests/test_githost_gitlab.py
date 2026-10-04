@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 import requests
@@ -86,7 +86,7 @@ def test_merge_request_for_branch_parses_merged_state():
     }
     mr = host(routes).merge_request_for_branch("finding/01J9")
     assert mr.state == "merged" and mr.approvers == ["bob"] and mr.merge_commit == "abc123"
-    assert mr.merged_at == datetime(2026, 10, 4, 10, 0, tzinfo=timezone.utc)
+    assert mr.merged_at == datetime(2026, 10, 4, 10, 0, tzinfo=UTC)
     assert host(routes).merge_request_for_branch("finding/none") is None
 
 

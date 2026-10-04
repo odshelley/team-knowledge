@@ -5,8 +5,17 @@ from pathlib import Path
 import pytest
 
 from teamknowledge.model import (
-    Evidence, Finding, Entity, ParseError, finding_filename, new_ulid, parse_entity,
-    parse_finding, parse_sections, serialize_entity, serialize_finding, slugify,
+    Evidence,
+    Finding,
+    ParseError,
+    finding_filename,
+    new_ulid,
+    parse_entity,
+    parse_finding,
+    parse_sections,
+    serialize_entity,
+    serialize_finding,
+    slugify,
     split_frontmatter,
 )
 
