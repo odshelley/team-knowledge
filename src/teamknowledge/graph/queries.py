@@ -12,6 +12,7 @@ from .client import GraphClient
 _LUCENE_SPECIAL = set('+-&|!(){}[]^"~*?:\\/')
 RRF_K = 60
 SCOPE_BOOST = 1.5
+VECTOR_MIN_SCORE = 0.7  # Neo4j cosine vector score is in [0, 1]; 0.7 corresponds to cosine 0.4
 
 
 def lucene_escape(text: str) -> str:
@@ -84,7 +85,7 @@ RETURN node.id AS id, score ORDER BY score DESC LIMIT $k
 
 VECTOR_QUERY = """
 CALL db.index.vector.queryNodes('finding_embedding', $k, $vec) YIELD node, score
-WHERE node.status = 'active' AND (size($kinds) = 0 OR node.kind IN $kinds)
+WHERE node.status = 'active' AND score >= $min_score AND (size($kinds) = 0 OR node.kind IN $kinds)
 RETURN node.id AS id, score
 """
 
@@ -129,10 +130,12 @@ ORDER BY node.type, node.name LIMIT $limit
 
 
 class Reader:
-    def __init__(self, client: GraphClient, embedder: Embedder | None = None, wiki_base_url: str = ""):
+    def __init__(self, client: GraphClient, embedder: Embedder | None = None, wiki_base_url: str = "",
+                 vector_min_score: float = VECTOR_MIN_SCORE):
         self.client = client
         self.embedder = embedder
         self.wiki_base_url = wiki_base_url.rstrip("/")
+        self.vector_min_score = vector_min_score
 
     def wiki_url(self, finding_id: str) -> str:
         return f"{self.wiki_base_url}/findings/{finding_id}.html"
@@ -156,16 +159,11 @@ class Reader:
         vector_ids: list[str] = []
         if self.embedder is None:
             warnings.append("semantic search disabled (TK_EMBEDDER=none); results are full-text only")
-        elif not fulltext_ids:
-            # Neo4j's vector index has no similarity floor: db.index.vector.queryNodes always
-            # returns its k nearest nodes, however irrelevant, as long as the index is non-empty.
-            # Without a full-text hit to anchor on, running the vector query would surface
-            # unrelated findings for a query with zero textual signal, so skip it.
-            pass
         else:
             try:
                 vec = self.embedder.embed([query])[0]
-                vector_ids = [r["id"] for r in self.client.run(VECTOR_QUERY, k=k, vec=vec, kinds=list(kinds))]
+                vector_ids = [r["id"] for r in self.client.run(VECTOR_QUERY, k=k, vec=vec, kinds=list(kinds),
+                                                                min_score=self.vector_min_score)]
             except Exception as exc:
                 warnings.append(f"semantic search unavailable ({exc}); results are full-text only")
         fused = rrf([fulltext_ids, vector_ids] if vector_ids else [fulltext_ids])

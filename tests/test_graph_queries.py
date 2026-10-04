@@ -94,7 +94,32 @@ def test_search_scope_boost(reader):
 @pytest.mark.neo4j
 def test_search_kinds_filter_and_empty(reader):
     assert all(f.kind == "fact" for f in reader.search("gateway", kinds=["fact"]).findings)
-    assert reader.search("zzzzqqq").findings == []
+
+
+@pytest.mark.neo4j
+def test_search_nonsense_query_returns_nothing_with_fake_embedder(reader):
+    r = reader.search("zzzzqqq")
+    assert r.findings == []
+    assert r.warnings == []
+
+
+@pytest.mark.neo4j
+def test_search_pure_semantic_recall(knowledge_repo, graph, reader):
+    class ConstantEmbedder:
+        model = "const"
+        dims = 64
+
+        def embed(self, texts: list[str]) -> list[list[float]]:
+            return [[1.0] + [0.0] * 63 for _ in texts]
+
+    Syncer(knowledge_repo, graph, embedder=ConstantEmbedder(), sleep=lambda s: None).sync(full=True)
+    r = Reader(graph, embedder=ConstantEmbedder()).search("zzzzqqq")
+    ids = {f.id for f in r.findings}
+    # Every active finding in the repo gets re-embedded to the identical constant vector by the
+    # full resync, so this also includes the template's own example finding (also active) -
+    # not just the five seeded for this fixture.
+    assert {FIDS[0], FIDS[1], FIDS[2], FIDS[3]} <= ids
+    assert FIDS[4] not in ids
 
 
 @pytest.mark.neo4j
