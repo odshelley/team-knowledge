@@ -7,6 +7,7 @@ from teamknowledge.cli import main
 from teamknowledge.githost.local import LocalGitHost
 from teamknowledge.model import Entity
 from teamknowledge.propose import ProposalInput, Proposer, finding_id_from_branch, merge_request_text, resolve_reviewers
+from teamknowledge.repo import GitError
 from teamknowledge.validate import Validator
 
 
@@ -100,7 +101,7 @@ def test_amend_unknown_id(proposer):
 
 def test_push_failure_keeps_branch_and_offers_retry(proposer, knowledge_repo, monkeypatch):
     def boom(branch, push_options=()):
-        raise RuntimeError("remote unreachable")
+        raise GitError("remote unreachable")
     monkeypatch.setattr(knowledge_repo, "push", boom)
     r = proposer.propose(good_input())
     assert r.merge_request_url is None and "remote unreachable" in r.error
@@ -113,13 +114,25 @@ def test_push_failure_keeps_branch_and_offers_retry(proposer, knowledge_repo, mo
 
 
 def test_cli_push(proposer, knowledge_repo, monkeypatch, capsys):
-    monkeypatch.setattr(knowledge_repo, "push", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("down")))
+    monkeypatch.setattr(knowledge_repo, "push", lambda *a, **k: (_ for _ in ()).throw(GitError("down")))
     r = proposer.propose(good_input())
     monkeypatch.undo()
     monkeypatch.setenv("TK_GITHOST", "local")
     monkeypatch.setenv("TK_AUTHOR", "alice")
     assert main(["push", r.branch, "--repo", str(knowledge_repo.root)]) == 0
     assert "local://merge-requests/1" in capsys.readouterr().out
+
+
+def test_retract_twice_keeps_main_checked_out_and_offers_no_retry(proposer, knowledge_repo):
+    first = proposer.propose(good_input())
+    proposer.host.approve(first.branch, "bob")
+    r1 = proposer.retract(first.finding_id, "the gateway was upgraded and the limit is gone")
+    assert r1.errors == [] and r1.error is None
+    proposer.host.approve(r1.branch, "bob")
+    # the finding is already retracted on main; retracting it again writes no new content
+    r2 = proposer.retract(first.finding_id, "the gateway was upgraded and the limit is gone")
+    assert r2.error is not None and r2.retry is None
+    assert knowledge_repo.git("rev-parse", "--abbrev-ref", "HEAD").strip() == "main"
 
 
 def test_resolve_reviewers():
@@ -139,4 +152,7 @@ def test_merge_request_text_and_branch_id():
     title, desc = merge_request_text(f, reason="why")
     assert title == "[fact] T"
     assert "**Claim.** C" in desc and "`system/a`" in desc and "https://c/x" in desc and "why" in desc and "## Detail" in desc
+    title2, desc2 = merge_request_text(f, reason="why", action="Amend")
+    assert title2 == "[fact] T"
+    assert desc2.startswith("**Action.** Amend")
     assert finding_id_from_branch("amend/01J9XK3M8Q7ZV2W1F4N6B5HT9D-ab12cd") == "01J9XK3M8Q7ZV2W1F4N6B5HT9D"

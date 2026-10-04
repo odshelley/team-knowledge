@@ -9,9 +9,9 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
-from .githost.base import GitHost
+from .githost.base import GitHost, GitHostError
 from .model import Entity, Evidence, Finding, new_ulid, parse_finding
-from .repo import KnowledgeRepo
+from .repo import GitError, KnowledgeRepo
 from .validate import ValidationError, Validator
 
 AMENDABLE = frozenset({"title", "claim", "scope", "applies_when", "evidence", "confidence", "contradicts", "review_after"})
@@ -50,7 +50,8 @@ class ProposalResult:
              "reviewers": self.reviewers, "warnings": self.warnings}
         if self.error:
             d["error"] = self.error
-            d["retry"] = self.retry
+            if self.retry is not None:
+                d["retry"] = self.retry
         return d
 
 
@@ -66,9 +67,12 @@ def resolve_reviewers(scope: list[str], entities: list[Entity], config: dict, au
     return [u for u in owners if u != author]
 
 
-def merge_request_text(f: Finding, reason: str | None = None) -> tuple[str, str]:
+def merge_request_text(f: Finding, reason: str | None = None, action: str | None = None) -> tuple[str, str]:
     title = f"[{f.kind}] {f.title}"
-    lines = [f"**Claim.** {f.claim}", "", "**Scope.** " + ", ".join(f"`{s}`" for s in f.scope),
+    lines: list[str] = []
+    if action:
+        lines += [f"**Action.** {action}", ""]
+    lines += [f"**Claim.** {f.claim}", "", "**Scope.** " + ", ".join(f"`{s}`" for s in f.scope),
              f"**Confidence.** {f.confidence}", ""]
     if f.applies_when:
         lines += [f"**Applies when.** {f.applies_when}", ""]
@@ -173,9 +177,9 @@ class Proposer:
         branch = f"amend/{finding_id}-{secrets.token_hex(3)}"
         self.repo.create_branch(branch)
         paths = [self.repo.write_finding(target)]
-        title, desc = merge_request_text(target, reason)
+        title, desc = merge_request_text(target, reason, action="Amend")
         reviewers = resolve_reviewers(target.scope, entities, self.repo.config, self.author)
-        return self._submit(finding_id, branch, paths, f"fix: amend {title}", f"Amend {title}", desc, reviewers)
+        return self._submit(finding_id, branch, paths, f"fix: amend {title}", title, desc, reviewers)
 
     def retract(self, finding_id: str, reason: str) -> ProposalResult:
         self.repo.sync_main()
@@ -192,9 +196,9 @@ class Proposer:
         branch = f"retract/{finding_id}"
         self.repo.create_branch(branch)
         paths = [self.repo.write_finding(target)]
-        title, desc = merge_request_text(target, reason)
+        title, desc = merge_request_text(target, reason, action="Retract")
         reviewers = resolve_reviewers(target.scope, entities, self.repo.config, self.author)
-        return self._submit(finding_id, branch, paths, f"fix: retract {title}", f"Retract {title}", desc, reviewers)
+        return self._submit(finding_id, branch, paths, f"fix: retract {title}", title, desc, reviewers)
 
     def push_branch(self, branch: str) -> ProposalResult:
         fid = finding_id_from_branch(branch)
@@ -210,7 +214,12 @@ class Proposer:
 
     def _submit(self, fid: str, branch: str, paths: list[Path], commit_message: str,
                 title: str, description: str, reviewers: list[str]) -> ProposalResult:
-        self.repo.commit_files(paths, commit_message)
+        try:
+            self.repo.commit_files(paths, commit_message)
+        except (GitError, OSError) as exc:  # e.g. nothing to commit: no commit was made, so no retry applies
+            self.repo.sync_main()
+            return ProposalResult(finding_id=fid, branch=branch, reviewers=reviewers,
+                                  error=f"{type(exc).__name__}: {exc}")
         return self._push_and_open(fid, branch, title, description, reviewers)
 
     def _push_and_open(self, fid: str, branch: str, title: str, description: str, reviewers: list[str]) -> ProposalResult:
@@ -225,7 +234,7 @@ class Proposer:
             else:
                 self.repo.push(branch, [])
                 mr = existing
-        except Exception as exc:  # git or host failure: the branch is committed locally, so offer a retry
+        except (GitError, GitHostError, OSError) as exc:  # git or host failure: the branch is committed locally, so offer a retry
             return ProposalResult(finding_id=fid, branch=branch, reviewers=reviewers, warnings=warnings,
                                   error=f"{type(exc).__name__}: {exc}", retry=f"tk push {branch}")
         finally:
