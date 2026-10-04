@@ -9,7 +9,7 @@
   {% if e.aliases %}<dt>Aliases</dt><dd>{{ e.aliases | join(", ") }}</dd>{% endif %}
   {% if e.owner %}<dt>Owners</dt><dd>{{ e.owner | join(", ") }}</dd>{% endif %}
   {% if e.related %}<dt>Related</dt><dd>{% for ref in e.related %}{{ m.entity_link(ref, entities, root) }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
-  {% if e.links %}<dt>Links</dt><dd>{% for l in e.links %}<a href="{{ l.ref }}">{{ l.ref }}</a>{% if l.note %} ({{ l.note }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+  {% if e.links %}<dt>Links</dt><dd>{% for l in e.links %}<a href="{{ l.ref | safe_url }}">{{ l.ref }}</a>{% if l.note %} ({{ l.note }}){% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
 </dl>
 {% for k in kinds %}{% if active_by_kind[k] %}
 <h2>{{ k }}</h2>

@@ -22,7 +22,7 @@
 <h2>Evidence</h2>
 <ul>
 {% for e in f.evidence %}
-  <li>{% if e.ref %}<a href="{{ e.ref }}">{{ e.ref }}</a>{% else %}{{ e.type }}{% endif %}{% if e.note %} &mdash; {{ e.note }}{% endif %}</li>
+  <li>{% if e.ref %}<a href="{{ e.ref | safe_url }}">{{ e.ref }}</a>{% else %}{{ e.type }}{% endif %}{% if e.note %} &mdash; {{ e.note }}{% endif %}</li>
 {% endfor %}
 </ul>
 {% endblock %}

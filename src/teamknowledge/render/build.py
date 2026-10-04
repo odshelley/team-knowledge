@@ -21,9 +21,20 @@ def _md(text: str | None) -> Markup:
     return Markup(markdown.markdown(text or "", extensions=["fenced_code", "tables"]))
 
 
+def safe_url(value: str | None) -> str:
+    """Only http(s) links and site-relative paths are safe to render as href; everything else becomes '#'."""
+    v = value or ""
+    if v.startswith(("http://", "https://")):
+        return v
+    if v.startswith(("/", "./", "../")) and ":" not in v.split("/", 1)[0]:
+        return v
+    return "#"
+
+
 def _env() -> Environment:
     env = Environment(loader=PackageLoader("teamknowledge.render", "templates"), autoescape=select_autoescape(["html"]))
     env.filters["md"] = _md
+    env.filters["safe_url"] = safe_url
     return env
 
 

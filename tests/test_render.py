@@ -74,6 +74,25 @@ def test_no_scripts_or_external_assets_and_links_resolve(knowledge_repo, tmp_pat
             assert (page.parent / href).resolve().exists(), f"{page}: {href}"
 
 
+def test_evidence_url_is_sanitized(knowledge_repo, tmp_path):
+    e = Entity(type="system", slug="kdb-gateway", name="kdb+ gateway",
+               description="Fronts the tick databases for the pricing desk.")
+    f = Finding(id=FID, kind="fact", title="Prod gateway timeout is 120s",
+                claim="The production gateway timeout is one hundred and twenty seconds.", scope=["system/kdb-gateway"],
+                evidence=[Evidence("url", ref="javascript:alert(1)"),
+                          Evidence("confluence", ref="https://confluence.bank/x/KDB-GW", note="limits section")],
+                confidence="observed", status="active", author="alice", created=date(2026, 10, 4),
+                sections={"Detail": "x", "How to check": "y"})
+    knowledge_repo.write_entity(e)
+    knowledge_repo.write_finding(f)
+    render_site(knowledge_repo, tmp_path / "public")
+    html = (tmp_path / "public" / "findings" / f"{FID}.html").read_text()
+    hrefs = re.findall(r'href="([^"]+)"', html)
+    assert "#" in hrefs
+    assert not any("javascript:" in href for href in hrefs)
+    assert "https://confluence.bank/x/KDB-GW" in hrefs  # a normal https ref is unchanged
+
+
 def test_cli_render(knowledge_repo, tmp_path, capsys):
     assert main(["render", "--repo", str(knowledge_repo.root), "--out", str(tmp_path / "site")]) == 0
     assert (tmp_path / "site" / "index.html").exists()
