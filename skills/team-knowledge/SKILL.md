@@ -54,6 +54,23 @@ Superseding an existing finding is `propose_finding` with `supersedes: [old id]`
 - Do not pad. Required sections only, no preamble, no sign-off.
 - Never record secrets, credentials, or client data.
 
+## Error handling
+
+Every tool returns one of four shapes. Recognise which one came back before deciding what to tell the user.
+
+- `{"errors": [...]}` — validation failed; nothing was written. Each item has `field`, `message`, and usually
+  `suggestion`. Fix what the suggestion makes obvious (a scope ref, a date format) and retry; ask the user only
+  for what you cannot resolve yourself.
+- `{"error": "...", "retry": "tk push <branch>"}` — the merge request push or creation failed, but the finding
+  is already committed locally on its branch. Tell the user the write succeeded locally and give them the
+  `retry` command to run once the git host is reachable again; do not re-propose the finding.
+- `{"error": "knowledge graph unreachable: ...", "wiki_url": "..."}` — a read tool could not reach Neo4j. Tell
+  the user the graph is down and point them at `wiki_url` for the static wiki, which reads the repo directly
+  and stays up when the database does not.
+- `{"error": "... disabled: <reason>"}` — a whole class of tools (read or write) is not configured on this
+  machine. Name the specific environment variable or setting the reason points at (for example `TK_REPO` or
+  `NEO4J_PASSWORD`) rather than retrying; the user or an admin needs to set it.
+
 ## Tool reference
 
 | Tool | Use |
