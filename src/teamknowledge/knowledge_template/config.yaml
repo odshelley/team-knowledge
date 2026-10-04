@@ -1,0 +1,8 @@
+schema_version: 1
+gitlab:
+  project: group/team-knowledge      # path with namespace; edit this
+  target_branch: main
+review:
+  default_reviewers: []              # GitLab usernames, used when no scoped entity has an owner
+wiki:
+  base_url: https://example.invalid/team-knowledge

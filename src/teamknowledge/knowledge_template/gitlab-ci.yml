@@ -1,0 +1,28 @@
+stages: [validate, publish]
+
+image: python:3.12-slim
+
+variables:
+  GIT_DEPTH: 0                      # sync diffs from the last synced commit; shallow clones break that
+  PIP_INDEX_URL: $INTERNAL_PYPI_URL # at work; unset at home
+
+before_script:
+  - pip install --quiet "teamknowledge==0.1.*"
+
+validate:
+  stage: validate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  script:
+    - tk validate --all
+
+pages:                              # the job must be named "pages" for GitLab Pages
+  stage: publish
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  resource_group: sync              # never two syncs at once
+  script:
+    - tk sync
+    - tk render --out public
+  artifacts:
+    paths: [public]
