@@ -177,6 +177,11 @@ class Syncer:
     def embed_missing(self) -> int:
         if self.embedder is None:
             raise SyncError("TK_EMBEDDER is none; nothing to embed")
+        meta = self.meta()
+        graph_model = meta.get("embedding_model") if meta else None
+        if graph_model and graph_model != self.embedder.model:
+            raise SyncError(f"embedding model changed (graph has {graph_model!r}, "
+                            f"configured {self.embedder.model!r}); run tk sync --full")
         ids = {r["id"] for r in self.client.run("MATCH (f:Finding) WHERE f.embedding IS NULL RETURN f.id AS id")}
         findings = [f for f in self.repo.load_findings() if f.id in ids]
         if not findings:

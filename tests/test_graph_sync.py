@@ -136,6 +136,14 @@ def test_model_change_requires_full(world):
     assert opts["indexConfig"]["vector.dimensions"] == 32
 
 
+def test_embed_missing_rejects_model_mismatch(world):
+    repo, graph, host, proposer, syncer = world
+    syncer.sync()
+    other = Syncer(repo, graph, embedder=FakeEmbedder(dims=32, model="fake-32"), host=host, sleep=lambda s: None)
+    with pytest.raises(SyncError, match="tk sync --full"):
+        other.embed_missing()
+
+
 def test_validation_error_aborts_without_advancing_meta(world):
     repo, graph, host, proposer, syncer = world
     syncer.sync()
