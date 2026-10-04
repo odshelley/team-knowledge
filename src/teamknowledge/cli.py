@@ -77,13 +77,21 @@ def cmd_review_approve(args: argparse.Namespace) -> int:
 
 def _host_from_env(repo):
     """Build the git host named by TK_GITHOST. The GitLab branch is filled in by Task 7."""
+    from .githost.gitlab import GitLabHost
     from .githost.local import LocalGitHost
 
     kind = os.environ.get("TK_GITHOST", "local")
     author = os.environ.get("TK_AUTHOR", "tk")
     if kind == "local":
         return LocalGitHost(Path(repo.remote_url()), author=author)
-    raise SystemExit(f"TK_GITHOST={kind!r} is not supported yet")
+    if kind == "gitlab":
+        cfg = repo.config.get("gitlab", {})
+        token = os.environ.get("GITLAB_TOKEN")
+        if not token:
+            raise SystemExit("GITLAB_TOKEN is required when TK_GITHOST=gitlab")
+        return GitLabHost(os.environ.get("GITLAB_URL", "https://gitlab.com"), token, cfg["project"],
+                          mode=os.environ.get("TK_GITLAB_MODE", "api"), target_branch=cfg.get("target_branch", "main"))
+    raise SystemExit(f"TK_GITHOST must be 'local' or 'gitlab', got {kind!r}")
 
 
 def cmd_push(args: argparse.Namespace) -> int:
