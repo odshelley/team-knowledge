@@ -236,7 +236,7 @@ A scope ref must resolve to an existing entity, or the merge request that introd
 
 | From | To | How | Validator checks |
 |---|---|---|---|
-| active | superseded | `propose_finding` with `supersedes: [old]` edits the old file in the same merge request, setting `status: superseded` and `superseded_by: new` | for every id in A's `supersedes`, that finding has `status: superseded` and `superseded_by: A`, and A is active |
+| active | superseded | `propose_finding` with `supersedes: [old]` edits the old file in the same merge request, setting `status: superseded` and `superseded_by: new` | for every id in A's `supersedes`, that finding has `status: superseded` and `superseded_by: A`. A itself may later be superseded in turn, so chains are allowed |
 | active | retracted | `retract_finding` sets `status: retracted` and `retracted_reason` | reason present |
 | superseded, retracted | anything | not allowed | status of an existing finding may only move forward |
 
@@ -762,11 +762,11 @@ src/teamknowledge/
     build.py  templates/
   mcp_server.py     the tools in section 9
   cli.py            tk init | validate | graph init | sync | render | review | push | eval | serve-mcp
+  knowledge_template/       the starter knowledge repo, shipped inside the package so `tk init` works after `pip install`
+    schema/finding.schema.json  schema/entity.schema.json  schema/kinds.yaml
+    config.yaml  gitlab-ci.yml (renamed to .gitlab-ci.yml on init)  README.md
+    entities/system/example-system.md  findings/<example>.md
 skills/team-knowledge/SKILL.md
-templates/knowledge-repo/
-  schema/finding.schema.json  schema/entity.schema.json  schema/kinds.yaml
-  config.yaml  .gitlab-ci.yml  README.md
-  entities/system/example.md  findings/<example>.md
 tests/
 docs/superpowers/specs/
 ```
