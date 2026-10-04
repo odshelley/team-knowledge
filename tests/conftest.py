@@ -23,7 +23,7 @@ def validator(knowledge_repo: KnowledgeRepo) -> Validator:
 @pytest.fixture(scope="session")
 def neo4j_client():
     try:
-        from testcontainers.neo4j import Neo4jContainer
+        from testcontainers.community.neo4j import Neo4jContainer
     except ImportError:
         pytest.skip("testcontainers not installed")
     try:
