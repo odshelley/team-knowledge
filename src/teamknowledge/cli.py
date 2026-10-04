@@ -122,6 +122,40 @@ def cmd_graph_init(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_sync(args: argparse.Namespace) -> int:
+    from .graph.sync import SyncError, Syncer
+    from .repo import KnowledgeRepo
+    from .settings import Settings, make_embedder_from, make_graph_client
+
+    s = Settings.from_env()
+    repo = KnowledgeRepo(args.repo)
+    host = None
+    try:
+        host = _host_from_env(repo)
+    except SystemExit as exc:
+        print(f"warning: no git host for review metadata ({exc})")
+    with make_graph_client(s) as client:
+        syncer = Syncer(repo, client, embedder=make_embedder_from(s), host=host)
+        try:
+            if args.embed_missing:
+                print(f"embedded {syncer.embed_missing()} findings")
+                return 0
+            report = syncer.sync(full=args.full)
+        except SyncError as exc:
+            print(f"error: {exc}")
+            return 1
+    if report.unchanged:
+        print(f"unchanged: graph already at {report.head}")
+        return 0
+    print(f"synced to {report.head}")
+    print(f"findings upserted: {report.findings_upserted}, entities upserted: {report.entities_upserted}, "
+          f"findings deleted: {report.findings_deleted}, entities deleted: {report.entities_deleted}")
+    print(f"embedded: {report.embedded}, embedding failures: {report.embedding_failures}, review metadata set: {report.review_metadata_set}")
+    for w in report.warnings:
+        print(f"warning: {w}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tk", description="Team Knowledge")
     parser.add_argument("--version", action="version", version=f"tk {__version__}")
@@ -158,6 +192,12 @@ def build_parser() -> argparse.ArgumentParser:
     graph = sub.add_parser("graph", help="graph administration").add_subparsers(dest="graph_command", required=True)
     p = graph.add_parser("init", help="create constraints and indexes")
     p.set_defaults(func=cmd_graph_init)
+
+    p = sub.add_parser("sync", help="upsert the repo into Neo4j")
+    _add_repo_arg(p)
+    p.add_argument("--full", action="store_true", help="wipe and rebuild")
+    p.add_argument("--embed-missing", action="store_true", help="only fill null embeddings")
+    p.set_defaults(func=cmd_sync)
 
     return parser
 
