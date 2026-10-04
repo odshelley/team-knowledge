@@ -10,9 +10,10 @@ from teamknowledge.githost.local import LocalGitHost
 from teamknowledge.graph.client import GraphClient
 from teamknowledge.graph.queries import Reader
 from teamknowledge.graph.sync import Syncer
-from teamknowledge.mcp_server import Services, build_server
+from teamknowledge.mcp_server import Services, build_server, build_services
 from teamknowledge.model import Entity
 from teamknowledge.propose import Proposer
+from teamknowledge.settings import Settings
 from teamknowledge.validate import Validator
 from teamknowledge.cli import build_parser
 
@@ -78,6 +79,28 @@ async def test_write_tools_disabled_without_proposer():
     server = build_server(Services(proposer=None, reader=None, host=None, author="x"))
     r = await call(server, "propose_finding", GOOD)
     assert "write tools disabled" in r["error"]
+
+
+async def test_build_services_guards_are_independent(knowledge_repo, monkeypatch):
+    e = Entity(type="system", slug="kdb-gateway", name="kdb+ gateway", owner=["bob"],
+               description="The q process that fronts the tick databases for the pricing desk.")
+    knowledge_repo.write_entity(e)
+    knowledge_repo.commit_files([e.path], "gateway")
+    knowledge_repo.push("main")
+    monkeypatch.setenv("TK_REPO", str(knowledge_repo.root))
+    monkeypatch.setenv("TK_GITHOST", "local")
+    monkeypatch.setenv("TK_AUTHOR", "alice")
+    monkeypatch.setenv("NEO4J_URI", "bolt://localhost:7687")
+    monkeypatch.setenv("NEO4J_PASSWORD", "")
+    services = build_services(Settings.from_env())
+    assert services.reader is None
+    assert services.proposer is not None
+    server = build_server(services)
+    r = await call(server, "propose_finding", GOOD)
+    assert r["merge_request_url"] == "local://merge-requests/1"
+    err = await call(server, "search_findings", {"query": "x"})
+    assert "disabled" in err["error"]
+    assert "NEO4J_URI" in err["error"] or "NEO4J_PASSWORD" in err["error"]
 
 
 async def test_unreachable_graph_reports_wiki_url():

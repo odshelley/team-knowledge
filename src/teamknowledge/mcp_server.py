@@ -6,15 +6,16 @@ accepted findings only. The server never writes to Neo4j.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 from neo4j import exceptions as neo4j_exceptions
 
-from .githost.base import GitHost
+from .githost.base import GitHost, GitHostError
 from .graph.queries import Reader
 from .propose import ProposalInput, Proposer
+from .repo import GitError
 from .settings import Settings, make_embedder_from, make_graph_client, make_host
 
 INSTRUCTIONS = (
@@ -31,29 +32,54 @@ class Services:
     host: GitHost | None
     author: str
     wiki_base_url: str = ""
+    disabled_reasons: dict[str, str] = field(default_factory=dict)
 
 
 def build_services(s: Settings) -> Services:
     from .repo import KnowledgeRepo
     from .validate import Validator
 
-    repo = KnowledgeRepo(s.repo) if s.repo else None
-    wiki = (repo.config.get("wiki", {}) or {}).get("base_url", "") if repo else ""
-    host = make_host(s, repo) if repo else None
-    proposer = Proposer(repo, Validator(repo.schema_dir), host, author=s.author) if repo and host else None
-    reader = Reader(make_graph_client(s), make_embedder_from(s), wiki) if s.neo4j_uri else None
-    return Services(proposer=proposer, reader=reader, host=host, author=s.author, wiki_base_url=wiki)
+    disabled_reasons: dict[str, str] = {}
+
+    host: GitHost | None = None
+    proposer: Proposer | None = None
+    wiki = ""
+    if not s.repo:
+        disabled_reasons["write"] = "TK_REPO not set"
+    else:
+        try:
+            repo = KnowledgeRepo(s.repo)
+            wiki = (repo.config.get("wiki", {}) or {}).get("base_url", "")
+            host = make_host(s, repo)
+            proposer = Proposer(repo, Validator(repo.schema_dir), host, author=s.author)
+        except (SystemExit, GitError, ValueError, OSError) as exc:
+            disabled_reasons["write"] = str(exc)
+
+    reader: Reader | None = None
+    if not s.neo4j_uri:
+        disabled_reasons["read"] = "NEO4J_URI not set"
+    else:
+        try:
+            reader = Reader(make_graph_client(s), make_embedder_from(s), wiki)
+        except (SystemExit, GitError, ValueError, OSError) as exc:
+            disabled_reasons["read"] = str(exc)
+
+    return Services(proposer=proposer, reader=reader, host=host, author=s.author, wiki_base_url=wiki,
+                    disabled_reasons=disabled_reasons)
 
 
 def build_server(s: Services) -> FastMCP:
     mcp = FastMCP("team-knowledge", instructions=INSTRUCTIONS)
 
     def need_writer() -> dict | None:
-        return None if s.proposer else {"error": "write tools disabled: TK_REPO not set"}
+        if s.proposer:
+            return None
+        return {"error": f"write tools disabled: {s.disabled_reasons.get('write', 'TK_REPO not set')}"}
 
     def read(fn) -> dict:
         if s.reader is None:
-            return {"error": "read tools disabled: NEO4J_URI not set", "wiki_url": s.wiki_base_url}
+            reason = s.disabled_reasons.get("read", "NEO4J_URI not set")
+            return {"error": f"read tools disabled: {reason}", "wiki_url": s.wiki_base_url}
         try:
             return fn()
         except (neo4j_exceptions.DriverError, neo4j_exceptions.Neo4jError, OSError) as exc:  # infra failures only
@@ -128,7 +154,7 @@ def build_server(s: Services) -> FastMCP:
             return {"error": "git host not configured"}
         try:
             mrs = s.host.list_open_by(s.author)
-        except Exception as exc:
+        except (GitHostError, OSError) as exc:
             return {"error": f"git host unreachable: {exc}"}
         return {"proposals": [{"iid": m.iid, "branch": m.branch, "url": m.url, "state": m.state} for m in mrs]}
 

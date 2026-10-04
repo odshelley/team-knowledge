@@ -42,7 +42,7 @@ class Settings:
 def make_graph_client(s: Settings):
     from .graph.client import GraphClient
 
-    if not s.neo4j_uri or s.neo4j_password is None:
+    if not s.neo4j_uri or not s.neo4j_password:
         raise SystemExit("NEO4J_URI and NEO4J_PASSWORD must be set")
     return GraphClient(s.neo4j_uri, s.neo4j_username, s.neo4j_password, s.neo4j_database)
 
