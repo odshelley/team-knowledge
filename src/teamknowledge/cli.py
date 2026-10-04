@@ -76,22 +76,10 @@ def cmd_review_approve(args: argparse.Namespace) -> int:
 
 
 def _host_from_env(repo):
-    """Build the git host named by TK_GITHOST. The GitLab branch is filled in by Task 7."""
-    from .githost.gitlab import GitLabHost
-    from .githost.local import LocalGitHost
+    """Build the git host named by TK_GITHOST."""
+    from .settings import Settings, make_host
 
-    kind = os.environ.get("TK_GITHOST", "local")
-    author = os.environ.get("TK_AUTHOR", "tk")
-    if kind == "local":
-        return LocalGitHost(Path(repo.remote_url()), author=author)
-    if kind == "gitlab":
-        cfg = repo.config.get("gitlab", {})
-        token = os.environ.get("GITLAB_TOKEN")
-        if not token:
-            raise SystemExit("GITLAB_TOKEN is required when TK_GITHOST=gitlab")
-        return GitLabHost(os.environ.get("GITLAB_URL", "https://gitlab.com"), token, cfg["project"],
-                          mode=os.environ.get("TK_GITLAB_MODE", "api"), target_branch=cfg.get("target_branch", "main"))
-    raise SystemExit(f"TK_GITHOST must be 'local' or 'gitlab', got {kind!r}")
+    return make_host(Settings.from_env(), repo)
 
 
 def cmd_push(args: argparse.Namespace) -> int:
@@ -165,6 +153,13 @@ def cmd_render(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve_mcp(args: argparse.Namespace) -> int:
+    from .mcp_server import main as serve
+
+    serve()
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tk", description="Team Knowledge")
     parser.add_argument("--version", action="version", version=f"tk {__version__}")
@@ -212,6 +207,9 @@ def build_parser() -> argparse.ArgumentParser:
     _add_repo_arg(p)
     p.add_argument("--out", type=Path, default=Path("public"))
     p.set_defaults(func=cmd_render)
+
+    p = sub.add_parser("serve-mcp", help="run the MCP server over stdio")
+    p.set_defaults(func=cmd_serve_mcp)
 
     return parser
 

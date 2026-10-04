@@ -51,3 +51,20 @@ def make_embedder_from(s: Settings):
     from .embed import make_embedder
 
     return make_embedder(s.embedder)
+
+
+def make_host(s: Settings, repo):
+    from pathlib import Path
+
+    from .githost.gitlab import GitLabHost
+    from .githost.local import LocalGitHost
+
+    if s.githost == "local":
+        return LocalGitHost(Path(repo.remote_url()), author=s.author)
+    if s.githost == "gitlab":
+        cfg = repo.config.get("gitlab", {})
+        if not s.gitlab_token:
+            raise SystemExit("GITLAB_TOKEN is required when TK_GITHOST=gitlab")
+        return GitLabHost(s.gitlab_url, s.gitlab_token, cfg["project"], mode=s.gitlab_mode,
+                          target_branch=cfg.get("target_branch", "main"))
+    raise SystemExit(f"TK_GITHOST must be 'local' or 'gitlab', got {s.githost!r}")
