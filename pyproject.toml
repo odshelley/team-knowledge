@@ -7,8 +7,9 @@ dependencies = [
   "pyyaml>=6.0",
   "jsonschema>=4.23",
   "neo4j>=5.27",
-  "mcp>=1.9,<2",
+  "mcp>=1.10,<2",
   "jinja2>=3.1",
+  "markupsafe>=2.1",
   "markdown>=3.7",
   "requests>=2.32",
   "python-ulid>=3.0",
@@ -48,3 +49,11 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
+# Pins the rule families that actually produce findings here under ruff's current default
+# selection. Full "E" and "B" families are deliberately omitted: selecting them wholesale
+# pulls in E501 (line-too-long, ~336 hits) and B905 (zip-without-strict), neither of which
+# fires under the implicit default and neither of which this fix wave addresses; RUF is
+# pinned to the two specific codes that fire (RUF005 is new noise under the full family).
+select = ["F", "I", "UP", "C4", "BLE", "PLW", "FURB", "RUF012", "RUF059"]
