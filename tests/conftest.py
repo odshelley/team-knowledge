@@ -31,7 +31,11 @@ def neo4j_client():
         container.start()
     except Exception as exc:  # Docker missing or daemon down
         pytest.skip(f"Docker not available: {exc}")
-    client = GraphClient(container.get_connection_url(), "neo4j", container.password, "neo4j")
+    try:
+        client = GraphClient(container.get_connection_url(), "neo4j", container.password, "neo4j")
+    except Exception as exc:
+        container.stop()
+        pytest.skip(f"Neo4j client could not be created: {exc}")
     yield client
     client.close()
     container.stop()
