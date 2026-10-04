@@ -88,6 +88,22 @@ async def test_unreachable_graph_reports_wiki_url():
     assert "unreachable" in r["error"] and r["wiki_url"] == "https://wiki.example/tk"
 
 
+async def test_programming_bug_in_reader_is_not_mislabelled_unreachable():
+    class BuggyClient:
+        def run(self, *args, **kwargs):
+            raise KeyError("boom")
+
+    services = Services(proposer=None, reader=Reader(BuggyClient(), wiki_base_url="https://wiki.example/tk"),
+                        host=None, author="x", wiki_base_url="https://wiki.example/tk")
+    server = build_server(services)
+    async with connect(server._mcp_server) as client:
+        result = await client.call_tool("findings_for_scope", {"scope": ["system/a"]})
+    assert result.isError
+    text = result.content[0].text
+    assert "unreachable" not in text
+    assert "boom" in text
+
+
 @pytest.mark.neo4j
 async def test_read_tools_against_graph(knowledge_repo, graph):
     e = Entity(type="system", slug="kdb-gateway", name="kdb+ gateway", aliases=["gw"],

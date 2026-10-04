@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from neo4j import exceptions as neo4j_exceptions
 
 from .githost.base import GitHost
 from .graph.queries import Reader
@@ -55,7 +56,7 @@ def build_server(s: Services) -> FastMCP:
             return {"error": "read tools disabled: NEO4J_URI not set", "wiki_url": s.wiki_base_url}
         try:
             return fn()
-        except Exception as exc:  # driver errors, network errors
+        except (neo4j_exceptions.DriverError, neo4j_exceptions.Neo4jError, OSError) as exc:  # infra failures only
             return {"error": f"knowledge graph unreachable: {type(exc).__name__}: {exc}", "wiki_url": s.wiki_base_url}
 
     @mcp.tool()
