@@ -1,6 +1,8 @@
+import shutil
 from datetime import date
 from pathlib import Path
 
+from teamknowledge import repo as repo_module
 from teamknowledge.cli import main
 from teamknowledge.model import Entity, Evidence, Finding
 from teamknowledge.repo import init_knowledge_repo, template_dir
@@ -17,6 +19,16 @@ def test_init_scaffolds_and_pushes(tmp_path):
     assert repo.git("rev-parse", "--abbrev-ref", "HEAD").strip() == "main"
     assert repo.git("rev-parse", "origin/main").strip() == repo.head_sha()
     assert repo.remote_url() == str((tmp_path / "r.git").resolve())
+
+
+def test_init_strips_ds_store(tmp_path, monkeypatch):
+    template_copy = tmp_path / "template_copy"
+    shutil.copytree(template_dir(), template_copy)
+    (template_copy / ".DS_Store").write_text("junk")
+    (template_copy / "entities" / ".DS_Store").write_text("junk")
+    monkeypatch.setattr(repo_module, "template_dir", lambda: template_copy)
+    repo = init_knowledge_repo(tmp_path / "clone", local_remote=tmp_path / "r.git", author="alice")
+    assert list(repo.root.rglob(".DS_Store")) == []
 
 
 def test_template_validates(knowledge_repo, validator):

@@ -156,7 +156,7 @@ def init_knowledge_repo(dest: Path, local_remote: Path | None = None, author: st
     dest = Path(dest)
     if dest.exists() and any(dest.iterdir()):
         raise FileExistsError(f"{dest} is not empty")
-    shutil.copytree(template_dir(), dest, dirs_exist_ok=True)
+    shutil.copytree(template_dir(), dest, dirs_exist_ok=True, ignore=shutil.ignore_patterns(".DS_Store"))
     (dest / "gitlab-ci.yml").rename(dest / ".gitlab-ci.yml")
     repo = KnowledgeRepo(dest)
     repo.git("init", "-q", "-b", "main")
