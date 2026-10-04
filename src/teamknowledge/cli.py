@@ -109,6 +109,19 @@ def cmd_push(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_graph_init(args: argparse.Namespace) -> int:
+    from .graph.schema import init_schema
+    from .settings import Settings, make_embedder_from, make_graph_client
+
+    s = Settings.from_env()
+    embedder = make_embedder_from(s)
+    dims = embedder.dims if embedder else None
+    with make_graph_client(s) as client:
+        init_schema(client, dims)
+    print(f"graph schema ready; vector index: {dims} dims" if dims else "graph schema ready; no vector index (TK_EMBEDDER=none)")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="tk", description="Team Knowledge")
     parser.add_argument("--version", action="version", version=f"tk {__version__}")
@@ -141,6 +154,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("branch")
     _add_repo_arg(p)
     p.set_defaults(func=cmd_push)
+
+    graph = sub.add_parser("graph", help="graph administration").add_subparsers(dest="graph_command", required=True)
+    p = graph.add_parser("init", help="create constraints and indexes")
+    p.set_defaults(func=cmd_graph_init)
 
     return parser
 
