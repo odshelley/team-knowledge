@@ -264,7 +264,13 @@ def _dump_header(header: dict[str, Any]) -> str:
 
 
 def serialize_finding(f: Finding) -> str:
-    return _dump_header(f.header()) + "\n" + f.body()
+    text = _dump_header(f.header())
+    if f.preamble:
+        text += "\n" + f.preamble + "\n"
+    else:
+        text += "\n"
+    text += f.body()
+    return text
 
 
 def serialize_entity(e: Entity) -> str:

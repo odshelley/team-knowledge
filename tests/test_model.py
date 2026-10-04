@@ -73,6 +73,44 @@ def test_round_trip_is_stable():
     assert serialize_finding(g) == text
 
 
+def test_preamble_preserved_on_round_trip():
+    text_with_preamble = """---
+id: 01J9XK3M8Q7ZV2W1F4N6B5HT9D
+kind: fact
+title: Example
+claim: A claim.
+scope: []
+evidence: []
+confidence: uncertain
+status: active
+author: test
+created: 2026-01-01
+supersedes: []
+contradicts: []
+---
+
+This is some preamble text before the first section.
+
+## Section A
+
+Content of section A.
+
+## Section B
+
+Content of section B.
+"""
+    f = parse_finding(text_with_preamble)
+    assert f.preamble == "This is some preamble text before the first section."
+
+    text1 = serialize_finding(f)
+    g = parse_finding(text1)
+    assert g.preamble == f.preamble
+    assert g.sections == f.sections
+
+    text2 = serialize_finding(g)
+    assert text2 == text1
+
+
 def test_created_accepts_iso_string():
     text = EXAMPLE.replace("created: 2026-10-04", "created: '2026-10-04'")
     assert parse_finding(text).created == date(2026, 10, 4)
