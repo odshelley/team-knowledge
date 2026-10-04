@@ -2,7 +2,7 @@ import pytest
 
 from teamknowledge.embed.fake import FakeEmbedder
 from teamknowledge.eval_fixtures import FINDINGS, QUERIES, finding_id
-from teamknowledge.eval_retrieval import run_eval
+from teamknowledge.eval_retrieval import recall_at_k, run_eval
 from teamknowledge.cli import build_parser
 
 
@@ -10,6 +10,12 @@ def test_fixture_shapes():
     assert len(FINDINGS) == 30 and len(QUERIES) == 20
     assert all(0 <= i < 30 for _, idx in QUERIES for i in idx)
     assert len(finding_id(0)) == 26
+
+
+def test_recall_at_k():
+    assert recall_at_k(["a", "b"], []) == 0.0
+    assert recall_at_k(["a", "b", "c"], ["a", "z"]) == 0.5
+    assert recall_at_k(["a", "b", "c", "d"], ["d"]) == 0.0
 
 
 @pytest.mark.neo4j

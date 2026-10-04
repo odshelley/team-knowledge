@@ -177,8 +177,10 @@ def cmd_eval_retrieval(args: argparse.Namespace) -> int:
         print("note: vector and fused arms are meaningless without a real embedder (set TK_EMBEDDER=openai or bedrock)")
     with Neo4jContainer("neo4j:5.26-community") as container, tempfile.TemporaryDirectory() as tmp:
         client = GraphClient(container.get_connection_url(), "neo4j", container.password)
-        result = run_eval(client, embedder, Path(tmp))
-        client.close()
+        try:
+            result = run_eval(client, embedder, Path(tmp))
+        finally:
+            client.close()
     print(f"embedder: {result['embedder']}; {result['findings']} findings, {result['queries']} queries")
     print(f"recall@3  full-text only: {result['fulltext']:.3f}")
     print(f"recall@3  vector only:    {result['vector']:.3f}")

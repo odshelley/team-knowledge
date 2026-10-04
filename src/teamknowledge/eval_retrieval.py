@@ -31,6 +31,8 @@ def build_fixture_repo(workdir: Path):
 
 
 def recall_at_k(ranked_ids: list[str], expected: list[str], k: int = K) -> float:
+    if not expected:
+        return 0.0
     hits = len(set(ranked_ids[:k]) & set(expected))
     return hits / len(expected)
 
