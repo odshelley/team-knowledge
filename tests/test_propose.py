@@ -113,6 +113,17 @@ def test_push_failure_keeps_branch_and_offers_retry(proposer, knowledge_repo, mo
     assert r2.merge_request_url == "local://merge-requests/1" and r2.finding_id == r.finding_id
 
 
+def test_push_and_fetch_failure_still_returns_result_on_main(proposer, knowledge_repo, monkeypatch):
+    def boom(branch, push_options=()):
+        raise GitError("remote unreachable")
+    monkeypatch.setattr(knowledge_repo, "push", boom)
+    knowledge_repo.git("remote", "set-url", "origin", "/nonexistent/remote.git")
+    r = proposer.propose(good_input())
+    assert r.merge_request_url is None and "remote unreachable" in r.error
+    assert r.retry == f"tk push {r.branch}"
+    assert knowledge_repo.git("rev-parse", "--abbrev-ref", "HEAD").strip() == "main"
+
+
 def test_cli_push(proposer, knowledge_repo, monkeypatch, capsys):
     monkeypatch.setattr(knowledge_repo, "push", lambda *a, **k: (_ for _ in ()).throw(GitError("down")))
     r = proposer.propose(good_input())

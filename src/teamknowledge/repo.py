@@ -53,8 +53,11 @@ class KnowledgeRepo:
         return self.git("remote", "get-url", "origin").strip()
 
     def sync_main(self, branch: str = "main") -> None:
-        self.git("fetch", "-q", "origin")
-        self.git("checkout", "-q", "-B", branch, f"origin/{branch}")
+        self.git("fetch", "-q", "origin", check=False)
+        if self.git("rev-parse", "--verify", "--quiet", f"origin/{branch}", check=False).strip():
+            self.git("checkout", "-q", "-B", branch, f"origin/{branch}")
+        else:
+            self.git("checkout", "-q", branch)
 
     def create_branch(self, name: str, start: str = "origin/main") -> None:
         self.git("checkout", "-q", "-B", name, start)

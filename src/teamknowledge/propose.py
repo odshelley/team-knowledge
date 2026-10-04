@@ -212,14 +212,22 @@ class Proposer:
 
     # --- internals ---------------------------------------------------------
 
+    def _recover_main(self, result: ProposalResult) -> ProposalResult:
+        """Return the clone to main; a failure here must never replace the result being returned."""
+        try:
+            self.repo.sync_main()
+        except (GitError, OSError) as exc:
+            result.warnings.append(f"clone may not be on main: {exc}")
+        return result
+
     def _submit(self, fid: str, branch: str, paths: list[Path], commit_message: str,
                 title: str, description: str, reviewers: list[str]) -> ProposalResult:
         try:
             self.repo.commit_files(paths, commit_message)
         except (GitError, OSError) as exc:  # e.g. nothing to commit: no commit was made, so no retry applies
-            self.repo.sync_main()
-            return ProposalResult(finding_id=fid, branch=branch, reviewers=reviewers,
-                                  error=f"{type(exc).__name__}: {exc}")
+            result = ProposalResult(finding_id=fid, branch=branch, reviewers=reviewers,
+                                    error=f"{type(exc).__name__}: {exc}")
+            return self._recover_main(result)
         return self._push_and_open(fid, branch, title, description, reviewers)
 
     def _push_and_open(self, fid: str, branch: str, title: str, description: str, reviewers: list[str]) -> ProposalResult:
@@ -235,8 +243,8 @@ class Proposer:
                 self.repo.push(branch, [])
                 mr = existing
         except (GitError, GitHostError, OSError) as exc:  # git or host failure: the branch is committed locally, so offer a retry
-            return ProposalResult(finding_id=fid, branch=branch, reviewers=reviewers, warnings=warnings,
-                                  error=f"{type(exc).__name__}: {exc}", retry=f"tk push {branch}")
-        finally:
-            self.repo.sync_main()
-        return ProposalResult(finding_id=fid, branch=branch, merge_request_url=mr.url, reviewers=reviewers, warnings=warnings)
+            result = ProposalResult(finding_id=fid, branch=branch, reviewers=reviewers, warnings=warnings,
+                                    error=f"{type(exc).__name__}: {exc}", retry=f"tk push {branch}")
+        else:
+            result = ProposalResult(finding_id=fid, branch=branch, merge_request_url=mr.url, reviewers=reviewers, warnings=warnings)
+        return self._recover_main(result)
